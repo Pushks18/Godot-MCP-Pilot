@@ -72,16 +72,19 @@ export function parseHeaderAttrs(header: string): Record<string, string> {
   return attrs;
 }
 
+// Attributes that Godot always expects to be quoted strings
+const QUOTED_ATTRS = new Set(["name", "type", "parent", "path", "instance", "groups"]);
+
 /** Build a header string from a section type and attributes. */
 export function buildHeader(type: string, attrs: Record<string, string | undefined>): string {
   let header = `[${type}`;
   for (const [k, v] of Object.entries(attrs)) {
     if (k === "_type" || v === undefined) continue;
-    // Quote values that need it
-    if (/^[\w.:/+-]+$/.test(v) && !v.includes(" ")) {
-      header += ` ${k}=${v}`;
-    } else {
+    // Always quote string-valued attrs; leave bare numeric/keyword values unquoted
+    if (QUOTED_ATTRS.has(k) || /[^a-zA-Z0-9_.:/+-]/.test(v)) {
       header += ` ${k}="${v}"`;
+    } else {
+      header += ` ${k}=${v}`;
     }
   }
   header += "]";
