@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "godot": {
+      "command": "node",
+      "args": ["build/index.js"],
+      "env": {
+        "GODOT_PATH": "",
+        "DEBUG": "false",
+        "READ_ONLY_MODE": "false"
+      }
+    }
+  }
+}

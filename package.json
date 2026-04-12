@@ -1,0 +1,37 @@
+{
+  "name": "godot-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for AI-driven Godot game development — launch editor, run projects, edit scenes and scripts via natural language",
+  "main": "build/index.js",
+  "bin": {
+    "godot-mcp": "build/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/index.ts",
+    "start": "node build/index.js",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "godot",
+    "mcp",
+    "model-context-protocol",
+    "game-development",
+    "ai",
+    "claude",
+    "cursor",
+    "gdscript"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
