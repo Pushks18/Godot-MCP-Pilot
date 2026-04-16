@@ -4,14 +4,163 @@
 
 [![npm version](https://img.shields.io/npm/v/godot-mcp)](https://www.npmjs.com/package/godot-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Docs](https://img.shields.io/badge/docs-live-blue)](https://PushkarajB.github.io/godot-mcp)
+[![CI](https://github.com/PushkarajB/godot-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/PushkarajB/godot-mcp/actions/workflows/ci.yml)
 
-godot-mcp exposes Godot engine operations as MCP tools, letting AI assistants **launch the editor, run projects, create and edit scenes, write GDScript, and inspect assets** — all through natural language.
+godot-mcp exposes Godot engine operations as MCP tools, letting AI assistants **launch the editor, run projects, create and edit scenes, write GDScript, and inspect assets** — all through natural language. Works for both **2D and 3D** games.
 
 ```
-"Create a CharacterBody2D player scene with a Sprite2D and CollisionShape2D"
+"Create a CharacterBody3D player scene with a Camera3D and collision"
 "Run the project and show me any errors"
-"Add a Camera2D that follows the player"
-"Rename the health variable to max_health in all scripts"
+"Add a DirectionalLight3D to the scene"
+"Create a 2D platformer with sprites and tilemaps"
+```
+
+---
+
+## Quick Start
+
+### 1. Install
+
+```bash
+npm install -g godot-mcp
+```
+
+Or use without installing:
+```bash
+npx godot-mcp
+```
+
+### 2. Run the setup wizard
+
+```bash
+npx godot-mcp setup
+# or, if installed globally:
+godot-mcp-setup
+```
+
+The wizard will:
+- Auto-detect your Godot binary (checks Applications, Downloads, PATH)
+- Ask which AI client you use
+- Write the config to the **right place** for that client
+
+---
+
+## Manual Setup
+
+### Claude Code (CLI / IDE extension)
+
+> **Critical:** Claude Code reads `.mcp.json` from the directory where you **launch** it.  
+> The file must be in your **game project folder**, not the godot-mcp folder.
+
+```bash
+# From inside your game project directory:
+claude mcp add godot -- npx godot-mcp
+```
+
+This writes `.mcp.json` to your current directory. Then always launch Claude Code from that directory:
+
+```bash
+cd ~/games/my-platformer
+claude
+```
+
+**If Godot isn't auto-detected** (e.g. you never moved it out of ~/Downloads):
+
+```bash
+claude mcp add godot -e GODOT_PATH=/path/to/Godot.app/Contents/MacOS/Godot -- npx godot-mcp
+```
+
+**Or write `.mcp.json` manually** in your game project root:
+
+```json
+{
+  "mcpServers": {
+    "godot": {
+      "command": "npx",
+      "args": ["godot-mcp"],
+      "env": {
+        "GODOT_PATH": "/path/to/your/Godot"
+      }
+    }
+  }
+}
+```
+
+### Claude Desktop
+
+Claude Desktop uses a **different** config file — it does **not** read `.mcp.json`.
+
+Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)  
+or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+
+```json
+{
+  "mcpServers": {
+    "godot": {
+      "command": "npx",
+      "args": ["godot-mcp"],
+      "env": {
+        "GODOT_PATH": "/path/to/your/Godot"
+      }
+    }
+  }
+}
+```
+
+Then **quit and reopen** Claude Desktop.
+
+### Cursor (`.cursor/mcp.json`)
+
+```json
+{
+  "mcpServers": {
+    "godot": {
+      "command": "npx",
+      "args": ["godot-mcp"],
+      "env": {
+        "GODOT_PATH": "/path/to/your/Godot"
+      }
+    }
+  }
+}
+```
+
+---
+
+## Godot Path Detection
+
+The server searches these locations automatically (in order):
+
+| OS | Paths checked |
+|---|---|
+| **macOS** | `/Applications/Godot.app`, `/Applications/Godot_4.app`, versioned names like `Godot_v4.3.app`, `~/Applications/...`, `~/Downloads/...`, Homebrew |
+| **Linux** | `/usr/bin/godot`, `/usr/local/bin/godot`, `/snap/bin/godot`, `~/.local/bin/godot` |
+| **Windows** | `C:\Program Files\Godot\Godot.exe`, `%LOCALAPPDATA%\Godot\Godot.exe` |
+
+If auto-detection fails, set `GODOT_PATH` to the absolute path of your Godot executable.
+
+---
+
+## 2D and 3D Games
+
+godot-mcp works equally well for 2D and 3D. Use the appropriate node types:
+
+| | 2D | 3D |
+|---|---|---|
+| Player | `CharacterBody2D` | `CharacterBody3D` |
+| Root | `Node2D` | `Node3D` |
+| Camera | `Camera2D` | `Camera3D` |
+| Mesh | `Sprite2D` | `MeshInstance3D` |
+| Collision | `CollisionShape2D` | `CollisionShape3D` |
+| Physics | `RigidBody2D` | `RigidBody3D` |
+| Light | — | `DirectionalLight3D`, `OmniLight3D` |
+
+Example prompts:
+```
+"Create a 3D scene with a Node3D root, MeshInstance3D floor, and DirectionalLight3D"
+"Add a CharacterBody3D with a CollisionShape3D using a CapsuleShape3D"
+"Write a GDScript for 3D first-person movement"
 ```
 
 ---
@@ -21,82 +170,13 @@ godot-mcp exposes Godot engine operations as MCP tools, letting AI assistants **
 | Category | Tools |
 |---|---|
 | **System** | `get_godot_version`, `list_projects`, `get_project_info` |
-| **Editor / Run** | `launch_editor`, `run_project`, `stop_project`, `get_debug_output` |
+| **Editor / Run** | `launch_editor`, `run_project`, `stop_project`, `get_debug_output`, `run_gdscript` |
 | **Scenes** | `list_project_scenes`, `read_scene`, `create_scene`, `save_scene` |
-| **Nodes** | `add_node`, `edit_node`, `remove_node`, `load_sprite` |
-| **Scripts** | `list_project_scripts`, `read_script`, `modify_script`, `create_script`, `analyze_script` |
+| **Nodes** | `add_node`, `edit_node`, `remove_node`, `duplicate_node`, `move_node`, `load_sprite`, `instantiate_scene` |
+| **Scripts** | `list_project_scripts`, `read_script`, `create_script`, `modify_script`, `analyze_script`, `list_script_functions`, `add_script_function`, `remove_script_function`, `add_signal`, `add_variable` |
+| **Project** | `get_project_settings`, `set_project_setting`, `get_main_scene`, `set_main_scene`, `list_autoloads`, `add_autoload`, `remove_autoload`, `list_input_actions`, `add_input_action`, `remove_input_action` |
+| **Assets** | `list_assets`, `get_asset_info` |
 | **UIDs** | `get_uid`, `update_project_uids` |
-
----
-
-## Quick Start
-
-### 1. Install
-
-```bash
-# Run directly with npx (no install needed)
-npx godot-mcp
-
-# Or install globally
-npm install -g godot-mcp
-```
-
-### 2. Add to your AI client
-
-**Claude Code:**
-```bash
-claude mcp add godot -- npx godot-mcp
-```
-
-With a custom Godot path:
-```bash
-claude mcp add godot -e GODOT_PATH=/Applications/Godot.app/Contents/MacOS/Godot -- npx godot-mcp
-```
-
-**Or add to `.mcp.json` manually:**
-```json
-{
-  "mcpServers": {
-    "godot": {
-      "command": "npx",
-      "args": ["godot-mcp"],
-      "env": {
-        "GODOT_PATH": "/path/to/your/Godot"
-      }
-    }
-  }
-}
-```
-
-**Cursor** (`.cursor/mcp.json`):
-```json
-{
-  "mcpServers": {
-    "godot": {
-      "command": "npx",
-      "args": ["godot-mcp"],
-      "env": {
-        "GODOT_PATH": "/path/to/your/Godot"
-      }
-    }
-  }
-}
-```
-
-**Claude Desktop** (`claude_desktop_config.json`):
-```json
-{
-  "mcpServers": {
-    "godot": {
-      "command": "npx",
-      "args": ["godot-mcp"],
-      "env": {
-        "GODOT_PATH": "/path/to/your/Godot"
-      }
-    }
-  }
-}
-```
 
 ---
 
@@ -108,195 +188,96 @@ claude mcp add godot -e GODOT_PATH=/Applications/Godot.app/Contents/MacOS/Godot 
 | `READ_ONLY_MODE` | `false` | If `true`, disables all modifying tools (safe for CI/review) |
 | `DEBUG` | `false` | Print debug info to stderr |
 
-### Godot executable locations
+---
 
-| OS | Default paths checked |
-|---|---|
-| macOS | `/Applications/Godot.app/Contents/MacOS/Godot`, `/Applications/Godot_4.app/...` |
-| Linux | `/usr/bin/godot`, `/usr/local/bin/godot`, `/snap/bin/godot` |
-| Windows | `C:\Program Files\Godot\Godot.exe` |
+## Troubleshooting
 
-If Godot isn't found automatically, set `GODOT_PATH`.
+### "MCP server not connected" / tools not appearing
+
+**Claude Code:** The `.mcp.json` must be in the directory where you run `claude`. Open a new terminal, `cd` into your game project, and run `claude` from there.
+
+**Claude Desktop:** Make sure you edited the right file (`claude_desktop_config.json`, not `.mcp.json`) and fully quit and reopened the app.
+
+### Godot not found
+
+Set `GODOT_PATH` explicitly in the config `env` block. On macOS, if you downloaded Godot but never moved it:
+
+```
+GODOT_PATH=/Users/yourname/Downloads/Godot.app/Contents/MacOS/Godot
+```
+
+To find where Godot is:
+```bash
+# macOS / Linux
+find ~/Downloads ~/Applications /Applications -name "Godot" -type f 2>/dev/null
+```
+
+### Scene parse errors / malformed .tscn
+
+If Godot refuses to load a scene edited by the MCP, check that `instance=` lines are unquoted:
+
+```
+# Correct
+instance=ExtResource("1_abc")
+
+# Wrong (Godot rejects this)
+instance="ExtResource(\"1_abc\")"
+```
+
+Run the project headless to see the exact error:
+```bash
+/path/to/Godot --path /path/to/project --headless --quit 2>&1
+```
+
+### MCP disconnects during a session
+
+This is a known issue with some MCP host implementations. Workaround: close and reopen your AI client. The MCP server itself is stateless — reconnecting is safe.
 
 ---
 
-## Tool Reference
+## Example Workflows
 
-### System Tools
-
-#### `get_godot_version`
-Returns the installed Godot version and OS platform.
-```json
-// Response
-{ "version": "4.3.stable", "platform": "darwin" }
+### 2D top-down shooter
+```
+"Create a 2D scene called Main.tscn"
+"Add a CharacterBody2D called Player at the center"
+"Create a movement + shooting script for the Player"
+"Add an Area2D called Enemy that moves toward the player"
+"Run the project and show errors"
 ```
 
-#### `list_projects`
-Find all Godot projects under a directory.
-```json
-// Input
-{ "directory": "/Users/me/games", "recursive": true }
-// Response
-{ "projects": [{ "name": "MyGame", "path": "/Users/me/games/MyGame" }] }
+### 3D platformer
 ```
-
-#### `get_project_info`
-Get metadata about a project.
-```json
-// Input
-{ "projectPath": "/Users/me/games/MyGame" }
-// Response
-{
-  "name": "MyGame",
-  "path": "/Users/me/games/MyGame",
-  "godotVersion": "4.3",
-  "structure": { "scenes": 12, "scripts": 8, "assets": 45 }
-}
-```
-
----
-
-### Execution Tools
-
-#### `launch_editor`
-Open the Godot editor (non-blocking).
-```json
-{ "projectPath": "/Users/me/games/MyGame" }
-```
-
-#### `run_project`
-Run the project in debug mode. Captures output for `get_debug_output`.
-```json
-{ "projectPath": "/Users/me/games/MyGame", "scene": "res://scenes/Main.tscn" }
-```
-
-#### `get_debug_output`
-Retrieve console logs from the running or last-run project.
-```json
-// Response
-{
-  "stdout": "Player spawned\nScore: 100\n",
-  "stderr": "",
-  "running": false
-}
-```
-
----
-
-### Scene Tools
-
-#### `create_scene`
-```json
-{
-  "projectPath": "/Users/me/games/MyGame",
-  "scenePath": "scenes/Player.tscn",
-  "rootNodeType": "CharacterBody2D"
-}
-```
-
-#### `add_node`
-```json
-{
-  "projectPath": "/Users/me/games/MyGame",
-  "scenePath": "scenes/Player.tscn",
-  "nodeType": "Sprite2D",
-  "nodeName": "Sprite2D",
-  "parentNodePath": ".",
-  "properties": { "position": "Vector2(0, -16)" }
-}
-```
-
-#### `edit_node`
-```json
-{
-  "projectPath": "/Users/me/games/MyGame",
-  "scenePath": "scenes/Player.tscn",
-  "nodePath": "Sprite2D",
-  "properties": { "scale": "Vector2(2, 2)", "modulate": "Color(1, 0.5, 0.5, 1)" }
-}
-```
-
-#### `load_sprite`
-```json
-{
-  "projectPath": "/Users/me/games/MyGame",
-  "scenePath": "scenes/Player.tscn",
-  "nodePath": "Sprite2D",
-  "texturePath": "res://assets/player.png"
-}
-```
-
----
-
-### Script Tools
-
-#### `create_script`
-Available templates: `CharacterBody2D`, `CharacterBody3D`, `Singleton`, or provide your own content.
-```json
-{
-  "projectPath": "/Users/me/games/MyGame",
-  "scriptPath": "scripts/Player.gd",
-  "template": "CharacterBody2D"
-}
-```
-
-#### `analyze_script`
-Checks for common errors and Godot 3→4 migration issues.
-```json
-// Response
-{
-  "errors": [{ "line": 5, "message": "Godot 4 renamed KinematicBody2D to CharacterBody2D" }],
-  "warnings": ["Line 12: Consider adding a type hint for better type safety"]
-}
-```
-
----
-
-## Example Workflow
-
-```
-You: Create a 2D platformer player scene
-
-Claude:
-1. create_scene → "scenes/Player.tscn" with root CharacterBody2D
-2. add_node → Sprite2D child
-3. add_node → CollisionShape2D child
-4. create_script → "scripts/Player.gd" using CharacterBody2D template
-5. "Player scene created with sprite, collision, and movement script!"
-
-You: Run the project and check for errors
-
-Claude:
-1. run_project → starts the game
-2. get_debug_output → "No errors found. Game running at 60fps."
+"Create a 3D scene with a StaticBody3D floor (MeshInstance3D box, scale 20x1x20)"
+"Add a CharacterBody3D player with a CapsuleShape3D collision"
+"Create a 3D character controller script with jump and gravity"
+"Add a Camera3D as a child of the player with offset Vector3(0, 2, 5)"
 ```
 
 ---
 
 ## Read-Only Mode
 
-Enable `READ_ONLY_MODE=true` to restrict the server to analysis-only tools. Useful for:
-- CI/CD pipelines that inspect but don't modify projects  
-- Code review workflows
-- Shared/production environments
-
 ```bash
 READ_ONLY_MODE=true npx godot-mcp
 ```
 
-In read-only mode, any call to a modifying tool returns an error explaining how to enable it.
+Disables all write tools. Useful for CI/CD or review workflows.
 
 ---
 
 ## Development
 
 ```bash
-git clone https://github.com/your-username/godot-mcp
+git clone https://github.com/PushkarajB/godot-mcp
 cd godot-mcp
 npm install
 npm run build
 
-# Run in development mode
+# Run the setup wizard
+npm run setup
+
+# Development mode (ts-node, no build step)
 npm run dev
 ```
 
@@ -305,21 +286,25 @@ npm run dev
 ```
 godot-mcp/
 ├── src/
-│   ├── index.ts           # Entry point
-│   ├── server.ts          # MCP server + tool routing
-│   ├── config.ts          # Godot path detection, env config
-│   ├── godot-process.ts   # Process management (spawn, capture)
+│   ├── index.ts               # Entry point
+│   ├── server.ts              # MCP server + tool routing
+│   ├── config.ts              # Godot path detection, env config
+│   ├── godot-process.ts       # Process management (spawn, capture)
 │   ├── tools/
-│   │   ├── system.ts      # Version, project listing/info
-│   │   ├── execution.ts   # Launch editor, run/stop project
-│   │   ├── scene.ts       # Scene CRUD + node manipulation
-│   │   ├── script.ts      # GDScript read/write/analyze
-│   │   └── uid.ts         # Godot 4 UID management
+│   │   ├── system.ts          # Version, project listing/info
+│   │   ├── execution.ts       # Launch editor, run/stop project
+│   │   ├── scene.ts           # Scene CRUD + node manipulation
+│   │   ├── script.ts          # GDScript read/write/analyze
+│   │   ├── assets.ts          # Asset listing/inspection
+│   │   ├── project_settings.ts # Settings, autoloads, input maps
+│   │   └── uid.ts             # Godot 4 UID management
 │   └── utils/
-│       ├── path.ts        # Path validation (prevents traversal)
-│       └── tscn.ts        # .tscn parser and serializer
+│       ├── path.ts            # Path validation (prevents traversal)
+│       ├── tscn.ts            # .tscn parser and serializer
+│       └── project_godot.ts   # project.godot reader
 └── scripts/
-    └── godot_operations.gd  # Bundled GDScript for runtime ops
+    ├── setup.js               # Interactive setup wizard
+    └── godot_operations.gd    # Bundled GDScript for runtime ops
 ```
 
 ---

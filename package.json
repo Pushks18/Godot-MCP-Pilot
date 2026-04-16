@@ -10,7 +10,11 @@
     "build": "tsc",
     "dev": "ts-node src/index.ts",
     "start": "node build/index.js",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "setup": "node scripts/setup.js",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
   },
   "keywords": [
     "godot",
@@ -22,14 +26,23 @@
     "cursor",
     "gdscript"
   ],
-  "author": "",
+  "author": "Pushkaraj Baradkar",
   "license": "MIT",
+  "homepage": "https://PushkarajB.github.io/godot-mcp",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PushkarajB/godot-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/PushkarajB/godot-mcp/issues"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "typescript": "^5.6.0"
+    "typescript": "^5.6.0",
+    "vitepress": "^1.6.3"
   },
   "engines": {
     "node": ">=18.0.0"

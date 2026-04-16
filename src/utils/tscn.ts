@@ -72,8 +72,10 @@ export function parseHeaderAttrs(header: string): Record<string, string> {
   return attrs;
 }
 
-// Attributes that Godot always expects to be quoted strings
-const QUOTED_ATTRS = new Set(["name", "type", "parent", "path", "instance", "groups"]);
+// Attributes that Godot always expects to be quoted strings.
+// NOTE: "instance" is intentionally excluded — Godot writes it unquoted as a
+// resource reference: instance=ExtResource("1_abc"), NOT instance="ExtResource(...)"
+const QUOTED_ATTRS = new Set(["name", "type", "parent", "path", "groups"]);
 
 /** Build a header string from a section type and attributes. */
 export function buildHeader(type: string, attrs: Record<string, string | undefined>): string {

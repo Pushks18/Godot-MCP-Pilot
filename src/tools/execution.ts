@@ -1,5 +1,5 @@
 import { existsSync } from "fs";
-import { resolve } from "path";
+import { resolve, join } from "path";
 import { spawn } from "child_process";
 import { config } from "../config.js";
 import {
@@ -64,6 +64,75 @@ export function stopProject(): { stopped: boolean; message: string } {
 export function getProjectDebugOutput(): { stdout: string; stderr: string; running: boolean } {
   const output = getDebugOutput();
   return { ...output, running: isProjectRunning() };
+}
+
+/**
+ * Write a temporary GDScript to the project, run it headlessly, return output,
+ * then clean up. The script body is automatically wrapped in a SceneTree subclass.
+ *
+ * Example body:
+ *   print("Hello from Godot!")
+ *   var x = 2 + 2
+ *   print(x)
+ */
+export async function runGdScript(
+  projectPath: string,
+  scriptBody: string,
+  timeoutMs = 30000
+): Promise<{ stdout: string; stderr: string; exitCode: number | null }> {
+  const absPath = resolve(projectPath);
+  if (!existsSync(absPath)) {
+    throw new Error(`Project path does not exist: "${projectPath}"`);
+  }
+
+  // Wrap in a minimal SceneTree script that Godot can run with --script
+  const fullScript = [
+    "extends SceneTree",
+    "",
+    "func _init() -> void:",
+    ...scriptBody.split("\n").map((l) => (l.trim() ? `\t${l}` : "")),
+    "\tquit()",
+    "",
+  ].join("\n");
+
+  const tmpPath = join(absPath, "_claude_tmp_run.gd");
+  const { writeFileSync, unlinkSync } = await import("fs");
+
+  writeFileSync(tmpPath, fullScript, "utf8");
+
+  const args = ["--path", absPath, "--headless", "--script", "res://_claude_tmp_run.gd", "--quit"];
+
+  return new Promise((resolve_) => {
+    let stdout = "";
+    let stderr = "";
+
+    const proc = spawn(config.godotPath, args, {
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+
+    const timer = setTimeout(() => {
+      proc.kill();
+    }, timeoutMs);
+
+    proc.stdout?.on("data", (d: Buffer) => (stdout += d.toString()));
+    proc.stderr?.on("data", (d: Buffer) => (stderr += d.toString()));
+
+    const cleanup = () => {
+      try { unlinkSync(tmpPath); } catch { /* ignore */ }
+    };
+
+    proc.on("error", (err) => {
+      clearTimeout(timer);
+      cleanup();
+      resolve_({ stdout, stderr: stderr + "\n" + err.message, exitCode: null });
+    });
+
+    proc.on("close", (code) => {
+      clearTimeout(timer);
+      cleanup();
+      resolve_({ stdout, stderr, exitCode: code });
+    });
+  });
 }
 
 /**

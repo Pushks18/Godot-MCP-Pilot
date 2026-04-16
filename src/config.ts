@@ -20,11 +20,24 @@ function findGodotBinary(): string {
     );
   } else if (platform === "darwin") {
     candidates.push(
+      // Standard install locations
       "/Applications/Godot.app/Contents/MacOS/Godot",
       "/Applications/Godot_4.app/Contents/MacOS/Godot",
+      // Versioned names (e.g. downloaded from godotengine.org)
+      "/Applications/Godot_v4.3.app/Contents/MacOS/Godot",
+      "/Applications/Godot_v4.4.app/Contents/MacOS/Godot",
+      "/Applications/Godot_v4.2.app/Contents/MacOS/Godot",
+      // User ~/Applications
+      join(os.homedir(), "Applications/Godot.app/Contents/MacOS/Godot"),
+      join(os.homedir(), "Applications/Godot_4.app/Contents/MacOS/Godot"),
+      // Common: downloaded but never moved out of ~/Downloads
+      join(os.homedir(), "Downloads/Godot.app/Contents/MacOS/Godot"),
+      join(os.homedir(), "Downloads/Godot_v4.3.app/Contents/MacOS/Godot"),
+      join(os.homedir(), "Downloads/Godot_v4.4.app/Contents/MacOS/Godot"),
+      join(os.homedir(), "Downloads/Godot_v4.2.app/Contents/MacOS/Godot"),
+      // Homebrew
       "/usr/local/bin/godot",
       "/opt/homebrew/bin/godot",
-      join(os.homedir(), "Applications/Godot.app/Contents/MacOS/Godot"),
       "godot"
     );
   } else {

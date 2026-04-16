@@ -10,6 +10,8 @@ import {
   addNodeSection,
   removeNodeSection,
   editNodeSection,
+  resolveNodePath,
+  buildHeader,
   TscnScene,
 } from "../utils/tscn.js";
 
@@ -198,6 +200,335 @@ export function removeNode(
   writeScene(fsPath, newScene);
 
   return { removed: true };
+}
+
+/** Duplicate a node (and its children) under the same parent with a new name. */
+export function duplicateNode(
+  projectPath: string,
+  scenePath: string,
+  nodePath: string,
+  newName: string
+): { duplicated: boolean; newPath: string } {
+  const { fsPath, scene } = readScene(projectPath, scenePath);
+
+  if (nodePath === ".") {
+    throw new Error("Cannot duplicate the root node");
+  }
+
+  const targetSection = findNodeSection(scene, nodePath);
+  if (!targetSection) {
+    throw new Error(`Node "${nodePath}" not found in scene "${scenePath}"`);
+  }
+
+  // Gather the node and all its descendants
+  const sections = scene.sections.filter((s) => {
+    if (s.attrs["_type"] !== "node") return false;
+    const p = resolveNodePath(scene, s);
+    return p === nodePath || p.startsWith(nodePath + "/");
+  });
+
+  if (sections.length === 0) {
+    throw new Error(`Node "${nodePath}" not found`);
+  }
+
+  // Determine parent path (strip last segment from nodePath)
+  const lastSlash = nodePath.lastIndexOf("/");
+  const originalParent = lastSlash >= 0 ? nodePath.slice(0, lastSlash) : ".";
+  const originalName = lastSlash >= 0 ? nodePath.slice(lastSlash + 1) : nodePath;
+
+  // Clone sections, rewriting paths
+  const cloned = sections.map((s) => {
+    const oldPath = resolveNodePath(scene, s);
+    let newNodeName: string;
+    let newParent: string;
+
+    if (oldPath === nodePath) {
+      // Root of the duplicated subtree
+      newNodeName = newName;
+      newParent = originalParent;
+    } else {
+      // Descendant — replace leading nodePath segment with newName path
+      newNodeName = s.attrs["name"] ?? "";
+      const descendantSuffix = oldPath.slice(nodePath.length + 1); // e.g. "Sprite2D"
+      const newAncestorPath =
+        originalParent === "." ? newName : `${originalParent}/${newName}`;
+      const parts = descendantSuffix.split("/");
+      parts.pop(); // last part is the node name
+      newParent = parts.length === 0 ? newAncestorPath : `${newAncestorPath}/${parts.join("/")}`;
+    }
+
+    const newAttrs: Record<string, string | undefined> = {
+      ...s.attrs,
+      name: newNodeName,
+      parent: newParent,
+    };
+    delete newAttrs["_type"];
+
+    const newHeader = buildHeader("node", newAttrs);
+    return {
+      header: newHeader,
+      attrs: { ...newAttrs, _type: "node" } as Record<string, string>,
+      props: [...s.props],
+    };
+  });
+
+  const newScene = { sections: [...scene.sections, ...cloned] };
+  writeScene(fsPath, newScene);
+
+  const newPath = originalParent === "." ? newName : `${originalParent}/${newName}`;
+  return { duplicated: true, newPath };
+}
+
+/** Move a node to a different parent in the same scene. */
+export function moveNode(
+  projectPath: string,
+  scenePath: string,
+  nodePath: string,
+  newParentPath: string
+): { moved: boolean; newPath: string } {
+  const { fsPath, scene } = readScene(projectPath, scenePath);
+
+  if (nodePath === ".") {
+    throw new Error("Cannot move the root node");
+  }
+
+  const targetSection = findNodeSection(scene, nodePath);
+  if (!targetSection) {
+    throw new Error(`Node "${nodePath}" not found in scene "${scenePath}"`);
+  }
+
+  // Validate new parent exists
+  if (newParentPath !== ".") {
+    const parentSection = findNodeSection(scene, newParentPath);
+    if (!parentSection) {
+      throw new Error(`Target parent "${newParentPath}" not found in scene`);
+    }
+  }
+
+  // Prevent moving a node into its own subtree
+  if (newParentPath.startsWith(nodePath + "/") || newParentPath === nodePath) {
+    throw new Error(`Cannot move "${nodePath}" into its own subtree`);
+  }
+
+  const nodeName = targetSection.attrs["name"] ?? "";
+  const oldParentPath =
+    targetSection.attrs["parent"] !== undefined ? targetSection.attrs["parent"] : ".";
+
+  const newSections = scene.sections.map((s) => {
+    if (s.attrs["_type"] !== "node") return s;
+    const currentPath = resolveNodePath(scene, s);
+
+    if (currentPath === nodePath) {
+      // Update the node's own parent
+      const newAttrs: Record<string, string | undefined> = { ...s.attrs, parent: newParentPath };
+      delete newAttrs["_type"];
+      return {
+        ...s,
+        header: buildHeader("node", newAttrs),
+        attrs: { ...newAttrs, _type: "node" } as Record<string, string>,
+      };
+    }
+
+    if (currentPath.startsWith(nodePath + "/")) {
+      // Update descendant parent paths
+      const suffix = currentPath.slice(nodePath.length + 1); // e.g. "Sprite2D" or "Sub/Sprite"
+      const parts = suffix.split("/");
+      parts.pop(); // remove node's own name; we take it from attrs
+      const descendantName = s.attrs["name"] ?? "";
+
+      let newParent: string;
+      if (parts.length === 0) {
+        // Direct child of moved node
+        newParent =
+          newParentPath === "."
+            ? nodeName
+            : `${newParentPath}/${nodeName}`;
+      } else {
+        const ancestorSuffix = parts.join("/");
+        newParent =
+          newParentPath === "."
+            ? `${nodeName}/${ancestorSuffix}`
+            : `${newParentPath}/${nodeName}/${ancestorSuffix}`;
+      }
+
+      const newAttrs: Record<string, string | undefined> = { ...s.attrs, parent: newParent };
+      delete newAttrs["_type"];
+      return {
+        ...s,
+        header: buildHeader("node", newAttrs),
+        attrs: { ...newAttrs, _type: "node" } as Record<string, string>,
+      };
+    }
+
+    return s;
+  });
+
+  writeScene(fsPath, { sections: newSections });
+  const newPath =
+    newParentPath === "." ? nodeName : `${newParentPath}/${nodeName}`;
+  return { moved: true, newPath };
+}
+
+/** Attach or detach a GDScript from a node in a scene. */
+export function setSceneScript(
+  projectPath: string,
+  scenePath: string,
+  nodePath: string,
+  scriptPath?: string
+): { updated: boolean } {
+  const { fsPath, scene } = readScene(projectPath, scenePath);
+
+  const nodeSection = findNodeSection(scene, nodePath);
+  if (!nodeSection) {
+    throw new Error(`Node "${nodePath}" not found in scene "${scenePath}"`);
+  }
+
+  if (!scriptPath) {
+    // Detach: remove 'script' property from the node
+    const newScene = editNodeSection(scene, nodePath, { script: "__REMOVE__" });
+    // Filter out the __REMOVE__ placeholder
+    const cleaned = {
+      sections: newScene.sections.map((s) => {
+        if (resolveNodePath(newScene, s) !== nodePath || s.attrs["_type"] !== "node") return s;
+        return { ...s, props: s.props.filter((p) => !p.match(/^\s*script\s*=\s*__REMOVE__/)) };
+      }),
+    };
+    writeScene(fsPath, cleaned);
+    return { updated: true };
+  }
+
+  // Attach: add ext_resource entry for the script if not already present
+  const resPath = scriptPath.startsWith("res://") ? scriptPath : `res://${scriptPath}`;
+
+  let resourceId: string;
+  let newScene: TscnScene;
+
+  const existingExt = scene.sections.find(
+    (s) =>
+      s.attrs["_type"] === "ext_resource" &&
+      s.attrs["path"] === resPath &&
+      s.attrs["type"] === "Script"
+  );
+
+  if (existingExt) {
+    resourceId = existingExt.attrs["id"];
+    newScene = scene;
+  } else {
+    resourceId = `script_${Date.now()}`;
+    const extHeader = `[ext_resource type="Script" path="${resPath}" id="${resourceId}"]`;
+    const extSection = {
+      header: extHeader,
+      attrs: {
+        _type: "ext_resource",
+        type: "Script",
+        path: resPath,
+        id: resourceId,
+      },
+      props: [],
+    };
+
+    const sections = [...scene.sections];
+    // Insert after the last existing ext_resource (or after gd_scene header)
+    let insertAt = 1;
+    for (let i = 0; i < sections.length; i++) {
+      if (sections[i].attrs["_type"] === "ext_resource") insertAt = i + 1;
+    }
+    sections.splice(insertAt, 0, extSection);
+    newScene = { sections };
+  }
+
+  const scriptValue = `ExtResource("${resourceId}")`;
+  const updated = editNodeSection(newScene, nodePath, { script: scriptValue });
+  writeScene(fsPath, updated);
+  return { updated: true };
+}
+
+/** Instantiate a packed scene (sub-scene) as a child node in this scene. */
+export function instantiateScene(
+  projectPath: string,
+  scenePath: string,
+  subScenePath: string,
+  parentNodePath?: string,
+  nodeName?: string
+): { instantiated: boolean; nodePath: string } {
+  const { fsPath, scene } = readScene(projectPath, scenePath);
+
+  const parent = parentNodePath ?? ".";
+  if (parent !== ".") {
+    const parentSection = findNodeSection(scene, parent);
+    if (!parentSection) {
+      throw new Error(`Parent node "${parent}" not found in scene "${scenePath}"`);
+    }
+  }
+
+  const resPath = subScenePath.startsWith("res://")
+    ? subScenePath
+    : `res://${subScenePath}`;
+
+  // Derive node name from scene filename if not given
+  const defaultName =
+    resPath
+      .split("/")
+      .pop()
+      ?.replace(/\.tscn$|\.scn$/, "") ?? "Instance";
+  const name = nodeName ?? defaultName;
+
+  // Reuse existing ext_resource for this packed scene if present
+  let resourceId: string;
+  let workingScene: TscnScene;
+
+  const existingExt = scene.sections.find(
+    (s) =>
+      s.attrs["_type"] === "ext_resource" &&
+      s.attrs["path"] === resPath &&
+      s.attrs["type"] === "PackedScene"
+  );
+
+  if (existingExt) {
+    resourceId = existingExt.attrs["id"];
+    workingScene = scene;
+  } else {
+    resourceId = `ps_${Date.now()}`;
+    const extHeader = `[ext_resource type="PackedScene" path="${resPath}" id="${resourceId}"]`;
+    const extSection = {
+      header: extHeader,
+      attrs: {
+        _type: "ext_resource",
+        type: "PackedScene",
+        path: resPath,
+        id: resourceId,
+      },
+      props: [],
+    };
+
+    const sections = [...scene.sections];
+    let insertAt = 1;
+    for (let i = 0; i < sections.length; i++) {
+      if (sections[i].attrs["_type"] === "ext_resource") insertAt = i + 1;
+    }
+    sections.splice(insertAt, 0, extSection);
+    workingScene = { sections };
+  }
+
+  // Build the instance node header (no 'type' attr — Godot uses instance= instead)
+  const instanceValue = `ExtResource("${resourceId}")`;
+  const instanceAttrs: Record<string, string | undefined> = {
+    name,
+    parent,
+    instance: instanceValue,
+  };
+  const instanceHeader = buildHeader("node", instanceAttrs);
+  const instanceSection = {
+    header: instanceHeader,
+    attrs: { ...instanceAttrs, _type: "node" } as Record<string, string>,
+    props: [],
+  };
+
+  const newScene = { sections: [...workingScene.sections, instanceSection] };
+  writeScene(fsPath, newScene);
+
+  const newNodePath = parent === "." ? name : `${parent}/${name}`;
+  return { instantiated: true, nodePath: newNodePath };
 }
 
 /** Load a texture into a Sprite2D node. */

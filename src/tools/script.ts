@@ -166,6 +166,324 @@ export function createScript(
   return { created: true, path: fsPath };
 }
 
+// ── GDScript structural analysis ─────────────────────────────────────────────
+
+export interface ScriptFunction {
+  name: string;
+  /** Parameter list as written (e.g. "delta: float, speed := 5.0") */
+  params: string;
+  /** Return type annotation if present (e.g. "void", "bool") */
+  returnType: string | null;
+  /** 1-based line number where the func starts */
+  line: number;
+  /** true if declared "static func" */
+  isStatic: boolean;
+}
+
+export interface ScriptSignal {
+  name: string;
+  params: string;
+  line: number;
+}
+
+export interface ScriptVariable {
+  name: string;
+  /** Full declaration line (e.g. "var speed: float = 300.0") */
+  declaration: string;
+  line: number;
+  exported: boolean;
+}
+
+/** Parse GDScript source and return its functions, signals, and top-level variables. */
+export function listScriptFunctions(
+  projectPath: string,
+  scriptPath: string
+): { functions: ScriptFunction[]; signals: ScriptSignal[]; variables: ScriptVariable[] } {
+  const { content } = readScript(projectPath, scriptPath);
+  const lines = content.split("\n");
+
+  const functions: ScriptFunction[] = [];
+  const signals: ScriptSignal[] = [];
+  const variables: ScriptVariable[] = [];
+
+  const funcRe =
+    /^(static\s+)?func\s+(\w+)\s*\(([^)]*)\)\s*(?:->\s*([\w\[\],? ]+))?\s*:/;
+  const signalRe = /^signal\s+(\w+)\s*(?:\(([^)]*)\))?/;
+  const varRe = /^(@export\s+)?(?:@\w+\s+)*(?:var|const)\s+(\w+)(?:\s*[:=].+)?/;
+
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trimStart();
+
+    const fm = trimmed.match(funcRe);
+    if (fm) {
+      functions.push({
+        name: fm[2],
+        params: (fm[3] ?? "").trim(),
+        returnType: fm[4]?.trim() ?? null,
+        line: i + 1,
+        isStatic: !!fm[1],
+      });
+      continue;
+    }
+
+    const sm = trimmed.match(signalRe);
+    if (sm) {
+      signals.push({
+        name: sm[1],
+        params: (sm[2] ?? "").trim(),
+        line: i + 1,
+      });
+      continue;
+    }
+
+    // Only capture top-level vars (no leading indent)
+    if (!lines[i].match(/^\s/) && trimmed.match(varRe)) {
+      const vm = trimmed.match(varRe)!;
+      variables.push({
+        name: vm[2],
+        declaration: trimmed,
+        line: i + 1,
+        exported: trimmed.startsWith("@export"),
+      });
+    }
+  }
+
+  return { functions, signals, variables };
+}
+
+/**
+ * Append a new function to the end of a GDScript file.
+ * @param funcName   Name of the function (must be valid GDScript identifier).
+ * @param params     Parameter list string, e.g. "delta: float, speed := 5.0".
+ * @param body       Body lines (will be tab-indented automatically).
+ * @param returnType Optional return type annotation, e.g. "void" or "bool".
+ * @param isStatic   Whether to prefix with `static`.
+ */
+export function addScriptFunction(
+  projectPath: string,
+  scriptPath: string,
+  funcName: string,
+  params: string,
+  body: string,
+  returnType?: string,
+  isStatic = false
+): { added: boolean; line: number } {
+  if (!/^\w+$/.test(funcName)) {
+    throw new Error(`Invalid function name: "${funcName}"`);
+  }
+
+  const fsPath = resolveScriptPath(projectPath, scriptPath);
+  if (!existsSync(fsPath)) {
+    throw new Error(`Script not found: "${scriptPath}"`);
+  }
+
+  const existing = readFileSync(fsPath, "utf8");
+
+  // Check for duplicate
+  if (new RegExp(`^(?:static\\s+)?func\\s+${funcName}\\s*\\(`, "m").test(existing)) {
+    throw new Error(
+      `Function "${funcName}" already exists in "${scriptPath}". Use modify_script to replace it.`
+    );
+  }
+
+  const returnPart = returnType ? ` -> ${returnType}` : "";
+  const prefix = isStatic ? "static " : "";
+  const header = `${prefix}func ${funcName}(${params})${returnPart}:`;
+
+  // Indent every body line with a tab; empty lines stay empty
+  const bodyLines = body
+    .split("\n")
+    .map((l) => (l.trim() === "" ? "" : `\t${l}`));
+
+  // Ensure body has at least a pass
+  if (bodyLines.every((l) => l.trim() === "")) {
+    bodyLines.push("\tpass");
+  }
+
+  const newContent =
+    existing.trimEnd() + "\n\n" + header + "\n" + bodyLines.join("\n") + "\n";
+
+  writeFileSync(fsPath, newContent, "utf8");
+  const lineNumber = newContent.split("\n").length - bodyLines.length - 1;
+  return { added: true, line: lineNumber };
+}
+
+/**
+ * Remove a function (and its entire body) from a GDScript file.
+ * Finds the function by name and removes from its `func` line until
+ * the next top-level statement or end of file.
+ */
+export function removeScriptFunction(
+  projectPath: string,
+  scriptPath: string,
+  funcName: string
+): { removed: boolean } {
+  const fsPath = resolveScriptPath(projectPath, scriptPath);
+  if (!existsSync(fsPath)) {
+    throw new Error(`Script not found: "${scriptPath}"`);
+  }
+
+  const content = readFileSync(fsPath, "utf8");
+  const lines = content.split("\n");
+
+  // Find the func declaration line
+  const startRe = new RegExp(`^(?:static\\s+)?func\\s+${funcName}\\s*\\(`);
+  let startIdx = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].trimStart().match(startRe) && !lines[i].match(/^\s+/)) {
+      startIdx = i;
+      break;
+    }
+  }
+
+  if (startIdx === -1) {
+    throw new Error(`Function "${funcName}" not found in "${scriptPath}"`);
+  }
+
+  // Find where the function ends: next non-blank, non-indented line after the func
+  let endIdx = lines.length;
+  for (let i = startIdx + 1; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.length === 0 || line === "\r") continue; // blank — still in func
+    if (!line.match(/^\s/)) {
+      // Non-indented non-blank line = next top-level item
+      endIdx = i;
+      break;
+    }
+  }
+
+  // Also remove any leading blank lines before the func
+  let removeFrom = startIdx;
+  while (removeFrom > 0 && lines[removeFrom - 1].trim() === "") {
+    removeFrom--;
+  }
+
+  const newLines = [...lines.slice(0, removeFrom), ...lines.slice(endIdx)];
+  writeFileSync(fsPath, newLines.join("\n"), "utf8");
+  return { removed: true };
+}
+
+/**
+ * Append a signal declaration to a GDScript file, after the last existing signal
+ * or at the top (after extends/class_name).
+ */
+export function addSignal(
+  projectPath: string,
+  scriptPath: string,
+  signalName: string,
+  params?: string
+): { added: boolean; declaration: string } {
+  if (!/^\w+$/.test(signalName)) {
+    throw new Error(`Invalid signal name: "${signalName}"`);
+  }
+
+  const fsPath = resolveScriptPath(projectPath, scriptPath);
+  if (!existsSync(fsPath)) {
+    throw new Error(`Script not found: "${scriptPath}"`);
+  }
+
+  const content = readFileSync(fsPath, "utf8");
+
+  if (new RegExp(`^signal\\s+${signalName}\\b`, "m").test(content)) {
+    throw new Error(`Signal "${signalName}" already exists in "${scriptPath}"`);
+  }
+
+  const declaration =
+    params && params.trim()
+      ? `signal ${signalName}(${params})`
+      : `signal ${signalName}`;
+
+  const newContent = insertAtTopLevel(content, declaration, "signal");
+  writeFileSync(fsPath, newContent, "utf8");
+  return { added: true, declaration };
+}
+
+/**
+ * Add a variable/property declaration to a GDScript file, after existing
+ * variables or at the top level.
+ * @param varName    Variable name.
+ * @param type       Optional type hint (e.g. "float", "String").
+ * @param defaultVal Optional default value expression (e.g. "300.0", '"hello"').
+ * @param exported   If true, adds @export annotation.
+ */
+export function addVariable(
+  projectPath: string,
+  scriptPath: string,
+  varName: string,
+  type?: string,
+  defaultVal?: string,
+  exported = false
+): { added: boolean; declaration: string } {
+  if (!/^\w+$/.test(varName)) {
+    throw new Error(`Invalid variable name: "${varName}"`);
+  }
+
+  const fsPath = resolveScriptPath(projectPath, scriptPath);
+  if (!existsSync(fsPath)) {
+    throw new Error(`Script not found: "${scriptPath}"`);
+  }
+
+  const content = readFileSync(fsPath, "utf8");
+
+  if (new RegExp(`^(?:@export\\s+)?(?:var|const)\\s+${varName}\\b`, "m").test(content)) {
+    throw new Error(`Variable "${varName}" already exists in "${scriptPath}"`);
+  }
+
+  let decl = "var " + varName;
+  if (type) decl += `: ${type}`;
+  if (defaultVal !== undefined) decl += ` = ${defaultVal}`;
+  if (exported) decl = "@export " + decl;
+
+  const newContent = insertAtTopLevel(content, decl, "var");
+  writeFileSync(fsPath, newContent, "utf8");
+  return { added: true, declaration: decl };
+}
+
+/**
+ * Insert a top-level declaration into a script at the appropriate position.
+ * "signal" declarations go before other signals or before functions.
+ * "var"    declarations go after signals, before functions.
+ */
+function insertAtTopLevel(content: string, declaration: string, kind: "signal" | "var"): string {
+  const lines = content.split("\n");
+
+  // Find insert position:
+  // 1. After the last line of the same kind (signal / var)
+  // 2. Before the first func
+  // 3. After extends/class_name header lines
+  let insertAfter = -1; // insert AFTER this index
+  let firstFunc = lines.length;
+  let lastExtends = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    const t = lines[i].trimStart();
+    if (t.startsWith("extends ") || t.startsWith("class_name ")) {
+      lastExtends = i;
+    }
+    if (t.startsWith("signal ") && kind === "signal") {
+      insertAfter = i;
+    }
+    if ((t.startsWith("var ") || t.startsWith("@export ") || t.startsWith("const ")) && kind === "var") {
+      insertAfter = i;
+    }
+    if (t.match(/^(?:static\s+)?func\s+/) && !t.startsWith(" ") && !t.startsWith("\t")) {
+      firstFunc = Math.min(firstFunc, i);
+    }
+  }
+
+  let pos: number;
+  if (insertAfter >= 0) {
+    pos = insertAfter + 1;
+  } else if (firstFunc < lines.length) {
+    pos = firstFunc;
+  } else {
+    pos = lastExtends + 1;
+  }
+
+  const newLines = [...lines.slice(0, pos), declaration, ...lines.slice(pos)];
+  return newLines.join("\n");
+}
+
 /** Basic static analysis of a GDScript file. */
 export function analyzeScript(
   projectPath: string,

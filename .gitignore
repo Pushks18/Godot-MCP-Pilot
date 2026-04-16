@@ -3,3 +3,6 @@ build/
 *.js.map
 .DS_Store
 .env
+.code-review-graph/
+docs/.vitepress/dist
+docs/.vitepress/cache

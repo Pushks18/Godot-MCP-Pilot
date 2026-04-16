@@ -1,0 +1,15 @@
+# Docs site — not needed in the npm package
+docs/
+
+# Dev tooling
+.github/
+.code-review-graph/
+scripts/setup.js
+
+# Source maps & declarations (already in build/)
+src/
+
+# Misc
+.env*
+.DS_Store
+*.js.map
