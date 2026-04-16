@@ -1304,7 +1304,7 @@ async function callTool(name: string, args: ToolArgs): Promise<unknown> {
 
 export async function startServer(): Promise<void> {
   const server = new Server(
-    { name: "godot-mcp", version: "1.1.0" },
+    { name: "godot-mcp-pilot", version: "1.1.0" },
     { capabilities: { tools: {} } }
   );
 
@@ -1334,7 +1334,7 @@ export async function startServer(): Promise<void> {
 
   if (config.debug) {
     process.stderr.write(
-      `[godot-mcp] Server started (v1.1.0). Godot: ${config.godotPath} | Read-only: ${config.readOnlyMode}\n`
+      `[godot-mcp-pilot] Server started (v1.1.0). Godot: ${config.godotPath} | Read-only: ${config.readOnlyMode}\n`
     );
   }
 }

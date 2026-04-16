@@ -1,10 +1,10 @@
 {
-  "name": "godot-mcp",
+  "name": "godot-mcp-pilot",
   "version": "1.0.0",
   "description": "MCP server for AI-driven Godot game development — launch editor, run projects, edit scenes and scripts via natural language",
   "main": "build/index.js",
   "bin": {
-    "godot-mcp": "build/index.js"
+    "godot-mcp-pilot": "build/index.js"
   },
   "scripts": {
     "build": "tsc",
@@ -28,13 +28,13 @@
   ],
   "author": "Pushkaraj Baradkar",
   "license": "MIT",
-  "homepage": "https://PushkarajB.github.io/godot-mcp",
+  "homepage": "https://pushks18.github.io/godot-mcp-pilot",
   "repository": {
     "type": "git",
-    "url": "https://github.com/PushkarajB/godot-mcp.git"
+    "url": "https://github.com/pushks18/godot-mcp-pilot.git"
   },
   "bugs": {
-    "url": "https://github.com/PushkarajB/godot-mcp/issues"
+    "url": "https://github.com/pushks18/godot-mcp-pilot/issues"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0"

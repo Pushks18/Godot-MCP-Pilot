@@ -1,13 +1,13 @@
-# godot-mcp
+# godot-mcp-pilot
 
 > **Model Context Protocol server for Godot 4** — Give AI assistants (Claude, Cursor, Cline, etc.) direct control over your Godot projects.
 
-[![npm version](https://img.shields.io/npm/v/godot-mcp)](https://www.npmjs.com/package/godot-mcp)
+[![npm version](https://img.shields.io/npm/v/godot-mcp-pilot)](https://www.npmjs.com/package/godot-mcp-pilot)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Docs](https://img.shields.io/badge/docs-live-blue)](https://PushkarajB.github.io/godot-mcp)
-[![CI](https://github.com/PushkarajB/godot-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/PushkarajB/godot-mcp/actions/workflows/ci.yml)
+[![Docs](https://img.shields.io/badge/docs-live-blue)](https://pushks18.github.io/godot-mcp-pilot)
+[![CI](https://github.com/pushks18/godot-mcp-pilot/actions/workflows/ci.yml/badge.svg)](https://github.com/pushks18/godot-mcp-pilot/actions/workflows/ci.yml)
 
-godot-mcp exposes Godot engine operations as MCP tools, letting AI assistants **launch the editor, run projects, create and edit scenes, write GDScript, and inspect assets** — all through natural language. Works for both **2D and 3D** games.
+godot-mcp-pilot exposes Godot engine operations as MCP tools, letting AI assistants **launch the editor, run projects, create and edit scenes, write GDScript, and inspect assets** — all through natural language. Works for both **2D and 3D** games.
 
 ```
 "Create a CharacterBody3D player scene with a Camera3D and collision"
@@ -23,20 +23,20 @@ godot-mcp exposes Godot engine operations as MCP tools, letting AI assistants **
 ### 1. Install
 
 ```bash
-npm install -g godot-mcp
+npm install -g godot-mcp-pilot
 ```
 
 Or use without installing:
 ```bash
-npx godot-mcp
+npx godot-mcp-pilot
 ```
 
 ### 2. Run the setup wizard
 
 ```bash
-npx godot-mcp setup
+npx godot-mcp-pilot setup
 # or, if installed globally:
-godot-mcp-setup
+godot-mcp-pilot-setup
 ```
 
 The wizard will:
@@ -51,11 +51,11 @@ The wizard will:
 ### Claude Code (CLI / IDE extension)
 
 > **Critical:** Claude Code reads `.mcp.json` from the directory where you **launch** it.  
-> The file must be in your **game project folder**, not the godot-mcp folder.
+> The file must be in your **game project folder**, not the godot-mcp-pilot folder.
 
 ```bash
 # From inside your game project directory:
-claude mcp add godot -- npx godot-mcp
+claude mcp add godot -- npx godot-mcp-pilot
 ```
 
 This writes `.mcp.json` to your current directory. Then always launch Claude Code from that directory:
@@ -68,7 +68,7 @@ claude
 **If Godot isn't auto-detected** (e.g. you never moved it out of ~/Downloads):
 
 ```bash
-claude mcp add godot -e GODOT_PATH=/path/to/Godot.app/Contents/MacOS/Godot -- npx godot-mcp
+claude mcp add godot -e GODOT_PATH=/path/to/Godot.app/Contents/MacOS/Godot -- npx godot-mcp-pilot
 ```
 
 **Or write `.mcp.json` manually** in your game project root:
@@ -78,7 +78,7 @@ claude mcp add godot -e GODOT_PATH=/path/to/Godot.app/Contents/MacOS/Godot -- np
   "mcpServers": {
     "godot": {
       "command": "npx",
-      "args": ["godot-mcp"],
+      "args": ["godot-mcp-pilot"],
       "env": {
         "GODOT_PATH": "/path/to/your/Godot"
       }
@@ -99,7 +99,7 @@ or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
   "mcpServers": {
     "godot": {
       "command": "npx",
-      "args": ["godot-mcp"],
+      "args": ["godot-mcp-pilot"],
       "env": {
         "GODOT_PATH": "/path/to/your/Godot"
       }
@@ -117,7 +117,7 @@ Then **quit and reopen** Claude Desktop.
   "mcpServers": {
     "godot": {
       "command": "npx",
-      "args": ["godot-mcp"],
+      "args": ["godot-mcp-pilot"],
       "env": {
         "GODOT_PATH": "/path/to/your/Godot"
       }
@@ -144,7 +144,7 @@ If auto-detection fails, set `GODOT_PATH` to the absolute path of your Godot exe
 
 ## 2D and 3D Games
 
-godot-mcp works equally well for 2D and 3D. Use the appropriate node types:
+godot-mcp-pilot works equally well for 2D and 3D. Use the appropriate node types:
 
 | | 2D | 3D |
 |---|---|---|
@@ -259,7 +259,7 @@ This is a known issue with some MCP host implementations. Workaround: close and 
 ## Read-Only Mode
 
 ```bash
-READ_ONLY_MODE=true npx godot-mcp
+READ_ONLY_MODE=true npx godot-mcp-pilot
 ```
 
 Disables all write tools. Useful for CI/CD or review workflows.
@@ -269,8 +269,8 @@ Disables all write tools. Useful for CI/CD or review workflows.
 ## Development
 
 ```bash
-git clone https://github.com/PushkarajB/godot-mcp
-cd godot-mcp
+git clone https://github.com/pushks18/godot-mcp-pilot
+cd godot-mcp-pilot
 npm install
 npm run build
 
@@ -284,7 +284,7 @@ npm run dev
 ### Project Structure
 
 ```
-godot-mcp/
+godot-mcp-pilot/
 ├── src/
 │   ├── index.ts               # Entry point
 │   ├── server.ts              # MCP server + tool routing

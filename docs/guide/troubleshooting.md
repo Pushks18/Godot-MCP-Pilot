@@ -52,7 +52,7 @@ Fix errors from the top down. Never skip `npm run build` before committing.
 ## DEBUG output
 
 ```bash
-DEBUG=true npx godot-mcp
+DEBUG=true npx godot-mcp-pilot
 ```
 
 Prints detailed information about every tool call to stderr.

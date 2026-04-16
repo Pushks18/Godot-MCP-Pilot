@@ -2,12 +2,12 @@
 layout: home
 
 hero:
-  name: godot-mcp
+  name: godot-mcp-pilot
   text: AI-driven Godot 4 development
   tagline: Give Claude, Cursor, and Cline direct control over your Godot projects — through natural language.
   image:
     src: /logo.svg
-    alt: godot-mcp
+    alt: godot-mcp-pilot
   actions:
     - theme: brand
       text: Get Started
@@ -17,7 +17,7 @@ hero:
       link: /reference/tools
     - theme: alt
       text: View on GitHub
-      link: https://github.com/PushkarajB/godot-mcp
+      link: https://github.com/pushks18/godot-mcp-pilot
 
 features:
   - icon: 🎮

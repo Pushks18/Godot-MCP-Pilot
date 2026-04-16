@@ -1,13 +1,13 @@
 import { defineConfig } from "vitepress";
 
 export default defineConfig({
-  title: "godot-mcp",
+  title: "godot-mcp-pilot",
   description:
     "Model Context Protocol server for Godot 4 — AI-driven game development",
-  base: "/godot-mcp/",
+  base: "/godot-mcp-pilot/",
 
   head: [
-    ["link", { rel: "icon", type: "image/svg+xml", href: "/godot-mcp/logo.svg" }],
+    ["link", { rel: "icon", type: "image/svg+xml", href: "/godot-mcp-pilot/logo.svg" }],
     ["meta", { name: "theme-color", content: "#478cbf" }],
     [
       "meta",
@@ -21,14 +21,14 @@ export default defineConfig({
 
   themeConfig: {
     logo: "/logo.svg",
-    siteTitle: "godot-mcp",
+    siteTitle: "godot-mcp-pilot",
 
     nav: [
       { text: "Guide", link: "/guide/getting-started" },
       { text: "Tools", link: "/reference/tools" },
       {
         text: "npm",
-        link: "https://www.npmjs.com/package/godot-mcp",
+        link: "https://www.npmjs.com/package/godot-mcp-pilot",
       },
     ],
 
@@ -51,7 +51,7 @@ export default defineConfig({
     socialLinks: [
       {
         icon: "github",
-        link: "https://github.com/PushkarajB/godot-mcp",
+        link: "https://github.com/pushks18/godot-mcp-pilot",
       },
     ],
 
@@ -62,7 +62,7 @@ export default defineConfig({
 
     editLink: {
       pattern:
-        "https://github.com/PushkarajB/godot-mcp/edit/main/docs/:path",
+        "https://github.com/pushks18/godot-mcp-pilot/edit/main/docs/:path",
       text: "Edit this page on GitHub",
     },
 

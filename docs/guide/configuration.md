@@ -34,7 +34,7 @@ find ~/Downloads ~/Applications /Applications -name "Godot" -type f 2>/dev/null
 Disables every tool that writes to disk or launches processes. Safe for CI pipelines and code-review bots.
 
 ```bash
-READ_ONLY_MODE=true npx godot-mcp
+READ_ONLY_MODE=true npx godot-mcp-pilot
 ```
 
 Or in your MCP config:
@@ -44,7 +44,7 @@ Or in your MCP config:
   "mcpServers": {
     "godot": {
       "command": "npx",
-      "args": ["godot-mcp"],
+      "args": ["godot-mcp-pilot"],
       "env": {
         "GODOT_PATH": "/path/to/Godot",
         "READ_ONLY_MODE": "true"
@@ -56,7 +56,7 @@ Or in your MCP config:
 
 ## 2D vs 3D
 
-godot-mcp works for both. Use the correct node types in your prompts:
+godot-mcp-pilot works for both. Use the correct node types in your prompts:
 
 | Feature | 2D | 3D |
 |---|---|---|

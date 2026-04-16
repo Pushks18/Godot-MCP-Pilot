@@ -1,6 +1,6 @@
 # Tool Catalog
 
-All tools exposed by godot-mcp to your AI assistant.
+All tools exposed by godot-mcp-pilot to your AI assistant.
 
 ---
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * godot-mcp setup script
+ * godot-mcp-pilot setup script
  *
  * Detects your Godot binary and writes the MCP config to the right place:
  *   - Claude Code  →  <your-game-project>/.mcp.json
@@ -108,7 +108,7 @@ function writeMcpJson(gameProjectDir, godotPath) {
   existing.mcpServers = existing.mcpServers || {};
   existing.mcpServers.godot = {
     command: "npx",
-    args: ["godot-mcp"],
+    args: ["godot-mcp-pilot"],
     ...(godotPath ? { env: { GODOT_PATH: godotPath } } : {}),
   };
 
@@ -130,7 +130,7 @@ function updateClaudeDesktopConfig(godotPath) {
   cfg.mcpServers = cfg.mcpServers || {};
   cfg.mcpServers.godot = {
     command: "npx",
-    args: ["godot-mcp"],
+    args: ["godot-mcp-pilot"],
     ...(godotPath ? { env: { GODOT_PATH: godotPath } } : {}),
   };
 
@@ -141,7 +141,7 @@ function updateClaudeDesktopConfig(godotPath) {
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 async function main() {
-  console.log("\n" + bold("godot-mcp setup") + "\n");
+  console.log("\n" + bold("godot-mcp-pilot setup") + "\n");
 
   // ── Step 1: Find Godot ────────────────────────────────────────────────────
   console.log("Searching for Godot...");
@@ -241,7 +241,7 @@ Example: if your game is at ~/games/my-platformer, the file goes to
       mcpServers: {
         godot: {
           command: "npx",
-          args: ["godot-mcp"],
+          args: ["godot-mcp-pilot"],
           ...(godotPath ? { env: { GODOT_PATH: godotPath } } : {}),
         },
       },
@@ -255,7 +255,7 @@ Example: if your game is at ~/games/my-platformer, the file goes to
 
   // ── Step 6: 3D support note ───────────────────────────────────────────────
   console.log(`
-${bold("What can godot-mcp build?")}
+${bold("What can godot-mcp-pilot build?")}
   ✓ 2D games   — scenes, sprites, tilemaps, physics
   ✓ 3D games   — MeshInstance3D, Camera3D, lights, physics bodies
   ✓ GDScript   — create, modify, analyze scripts

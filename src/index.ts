@@ -2,6 +2,6 @@
 import { startServer } from "./server.js";
 
 startServer().catch((err) => {
-  process.stderr.write(`[godot-mcp] Fatal error: ${err.message}\n`);
+  process.stderr.write(`[godot-mcp-pilot] Fatal error: ${err.message}\n`);
   process.exit(1);
 });
