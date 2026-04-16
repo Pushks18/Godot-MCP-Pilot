@@ -4,8 +4,8 @@
 
 [![npm version](https://img.shields.io/npm/v/godot-mcp-pilot)](https://www.npmjs.com/package/godot-mcp-pilot)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Docs](https://img.shields.io/badge/docs-live-blue)](https://pushks18.github.io/godot-mcp-pilot)
-[![CI](https://github.com/pushks18/godot-mcp-pilot/actions/workflows/ci.yml/badge.svg)](https://github.com/pushks18/godot-mcp-pilot/actions/workflows/ci.yml)
+[![Docs](https://img.shields.io/badge/docs-live-blue)](https://pushks18.github.io/Godot-MCP-Pilot)
+[![CI](https://github.com/Pushks18/Godot-MCP-Pilot/actions/workflows/ci.yml/badge.svg)](https://github.com/Pushks18/Godot-MCP-Pilot/actions/workflows/ci.yml)
 
 godot-mcp-pilot exposes Godot engine operations as MCP tools, letting AI assistants **launch the editor, run projects, create and edit scenes, write GDScript, and inspect assets** — all through natural language. Works for both **2D and 3D** games.
 
