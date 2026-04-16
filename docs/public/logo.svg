@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Godot-style robot head -->
+  <rect x="8" y="14" width="48" height="40" rx="10" fill="#478cbf"/>
+  <!-- Eyes -->
+  <circle cx="22" cy="30" r="7" fill="white"/>
+  <circle cx="42" cy="30" r="7" fill="white"/>
+  <circle cx="23" cy="31" r="3.5" fill="#1a1a2e"/>
+  <circle cx="43" cy="31" r="3.5" fill="#1a1a2e"/>
+  <!-- Eye shine -->
+  <circle cx="24.5" cy="29.5" r="1.2" fill="white"/>
+  <circle cx="44.5" cy="29.5" r="1.2" fill="white"/>
+  <!-- Smile -->
+  <path d="M22 42 Q32 49 42 42" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+  <!-- Antenna -->
+  <line x1="32" y1="14" x2="32" y2="6" stroke="#478cbf" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="32" cy="5" r="3" fill="#478cbf"/>
+  <!-- MCP circuit lines -->
+  <line x1="8" y1="38" x2="2" y2="38" stroke="#5ba8d4" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="2" cy="38" r="1.5" fill="#5ba8d4"/>
+  <line x1="56" y1="38" x2="62" y2="38" stroke="#5ba8d4" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="62" cy="38" r="1.5" fill="#5ba8d4"/>
+</svg>

@@ -7,7 +7,7 @@ export default defineConfig({
   base: "/godot-mcp/",
 
   head: [
-    ["link", { rel: "icon", href: "/godot-mcp/favicon.ico" }],
+    ["link", { rel: "icon", type: "image/svg+xml", href: "/godot-mcp/logo.svg" }],
     ["meta", { name: "theme-color", content: "#478cbf" }],
     [
       "meta",
