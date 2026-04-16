@@ -9,6 +9,8 @@
 
 godot-mcp-pilot exposes Godot engine operations as MCP tools, letting AI assistants **launch the editor, run projects, create and edit scenes, write GDScript, and inspect assets** — all through natural language. Works for both **2D and 3D** games.
 
+![Demo](assets/DEMO.gif)
+
 ```
 "Create a CharacterBody3D player scene with a Camera3D and collision"
 "Run the project and show me any errors"
